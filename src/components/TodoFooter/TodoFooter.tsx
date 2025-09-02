@@ -15,10 +15,14 @@ export const TodoFooter: React.FC<Props> = ({
   setFilter,
   clearCompleted,
 }) => {
+  const todoLeftCounter = todos.filter(todo => !todo.completed).length;
+  const noCompletedTodos = !todos.some(todo => todo.completed);
+  const filterIsActive = filter === FilterType.Active;
+
   return (
     <footer className="todoapp__footer" data-cy="Footer">
       <span className="todo-count" data-cy="TodosCounter">
-        {`${todos.filter(todo => !todo.completed).length} items left`}
+        {todoLeftCounter} items left
       </span>
 
       {/* Active link should have the 'selected' class */}
@@ -62,8 +66,8 @@ export const TodoFooter: React.FC<Props> = ({
         type="button"
         className="todoapp__clear-completed"
         data-cy="ClearCompletedButton"
-        disabled={!todos.some(todo => todo.completed)}
-        onClick={() => clearCompleted()}
+        disabled={noCompletedTodos || filterIsActive}
+        onClick={clearCompleted}
       >
         Clear completed
       </button>

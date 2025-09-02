@@ -34,9 +34,7 @@ export const TodoItem: React.FC<Props> = ({
   const handleEditTodoTitle = () => {
     setEditingTodo(todo);
     setNewTitle(todo.title);
-    setTimeout(() => {
-      titleFieldRef.current?.focus();
-    }, 0);
+    titleFieldRef.current?.focus();
   };
 
   const handleTitleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,9 +128,7 @@ export const TodoItem: React.FC<Props> = ({
           type="button"
           className="todo__remove"
           data-cy="TodoDelete"
-          onClick={() => {
-            onDelete(todo.id);
-          }}
+          onClick={() => onDelete(todo.id)}
         >
           ×
         </button>

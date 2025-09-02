@@ -22,22 +22,24 @@ export const TodoHeader: React.FC<Props> = ({
 }) => {
   const [newTitle, setNewTitle] = useState('');
 
-  const SubmitHandler = (event: React.FormEvent<HTMLFormElement>) => {
+  const SubmitHandler = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (newTitle.trim().length === 0) {
+    if (!newTitle.trim().length) {
       setError('Title should not be empty');
 
       return;
     }
 
-    onAdd(newTitle.trim()).then(response => {
-      if (response) {
+    try {
+      const addedTodo = await onAdd(newTitle.trim());
+
+      if (addedTodo) {
         setNewTitle('');
       }
-
+    } finally {
       inputRef.current?.focus();
-    });
+    }
   };
 
   return (
@@ -50,7 +52,7 @@ export const TodoHeader: React.FC<Props> = ({
             active: todos.every(todo => todo.completed),
           })}
           data-cy="ToggleAllButton"
-          onClick={() => onToggleAll()}
+          onClick={onToggleAll}
         />
       )}
 

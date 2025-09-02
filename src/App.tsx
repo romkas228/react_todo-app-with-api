@@ -28,31 +28,6 @@ export const App: React.FC = () => {
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [newTitle, setNewTitle] = useState('');
 
-  useEffect(() => {
-    inputRef.current?.focus();
-    setError('');
-    setIsLoading(true);
-
-    getTodos()
-      .then(setTodos)
-      .catch(() => setError('Unable to load todos'))
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    let timeoutId: number;
-
-    if (error?.length) {
-      timeoutId = window.setTimeout(() => setError(null), 3000);
-    }
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [error]);
-
   const addNewTodo = async (title: string) => {
     if (inputRef.current) {
       inputRef.current.disabled = true;
@@ -189,9 +164,9 @@ export const App: React.FC = () => {
       });
 
       setTodos(currTodos =>
-        currTodos.map(currTodo => {
-          return currTodo.id === editedTodo.id ? editedTodo : currTodo;
-        }),
+        currTodos.map(currTodo =>
+          currTodo.id === editedTodo.id ? editedTodo : currTodo,
+        ),
       );
     } catch {
       setError('Unable to update a todo');
@@ -219,6 +194,42 @@ export const App: React.FC = () => {
       }),
     [todos, filter],
   );
+
+  const loadTodos = async () => {
+    inputRef.current?.focus();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const fetchedTodos = await getTodos();
+
+      setTodos(fetchedTodos);
+    } catch {
+      setError('Unable to load todos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const ErrorNotificationClear = () => {
+    let timeoutId: number;
+
+    if (error?.length) {
+      timeoutId = window.setTimeout(() => setError(null), 3000);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  };
+
+  useEffect(() => {
+    loadTodos();
+  }, []);
+
+  useEffect(() => {
+    return ErrorNotificationClear();
+  }, [error]);
 
   if (!USER_ID) {
     return <UserWarning />;
