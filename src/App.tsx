@@ -16,15 +16,16 @@ import { TodoFooter } from './components/TodoFooter';
 import { ErrorNotification } from './components/ErrorNotification';
 import { TodoHeader } from './components/TodoHeader/TodoHeader';
 import { TodoItem } from './components/TodoItem';
+import { TodoError } from './types/TodoError';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<TodoError | null>(null);
   const [filter, setFilter] = useState<FilterType>(FilterType.All);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [tempoTodo, setTempoTodo] = useState<Todo | null>(null);
-  const [IdToLoad, setIdToLoad] = useState<number[]>([]);
+  const [processingIds, setProcessingIds] = useState<number[]>([]);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [newTitle, setNewTitle] = useState('');
 
@@ -48,7 +49,7 @@ export const App: React.FC = () => {
 
       return true;
     } catch {
-      setError('Unable to add a todo');
+      setError(TodoError.AddError);
       setTempoTodo(null);
 
       return false;
@@ -60,16 +61,16 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteTodo = async (id: number) => {
-    setIdToLoad(prev => [...prev, id]);
+    setProcessingIds(prev => [...prev, id]);
 
     try {
       await deleteTodo(id);
 
       setTodos(currentTodos => currentTodos.filter(todo => todo.id !== id));
     } catch {
-      setError('Unable to delete a todo');
+      setError(TodoError.DeleteError);
     } finally {
-      setIdToLoad([]);
+      setProcessingIds([]);
       inputRef.current?.focus();
     }
   };
@@ -77,7 +78,7 @@ export const App: React.FC = () => {
   const handleClearCompleted = async () => {
     const completedTodos = todos.filter(todo => todo.completed);
 
-    setIdToLoad(completedTodos.map(todo => todo.id));
+    setProcessingIds(completedTodos.map(todo => todo.id));
 
     try {
       await Promise.all(
@@ -86,18 +87,18 @@ export const App: React.FC = () => {
             await deleteTodo(todo.id);
             setTodos(prev => prev.filter(currTodo => todo.id !== currTodo.id));
           } catch {
-            setError('Unable to delete a todo');
+            setError(TodoError.DeleteError);
           }
         }),
       );
     } finally {
-      setIdToLoad([]);
+      setProcessingIds([]);
       inputRef.current?.focus();
     }
   };
 
   const handleToggleTodo = async (todo: Todo) => {
-    setIdToLoad(prev => [...prev, todo.id]);
+    setProcessingIds(prev => [...prev, todo.id]);
 
     try {
       const toggledTodo = await updateTodo(todo.id, {
@@ -110,9 +111,9 @@ export const App: React.FC = () => {
         }),
       );
     } catch {
-      setError('Unable to update a todo');
+      setError(TodoError.UpdateError);
     } finally {
-      setIdToLoad([]);
+      setProcessingIds([]);
     }
   };
 
@@ -120,10 +121,10 @@ export const App: React.FC = () => {
     let todosToToggle = todos.filter(todo => !todo.completed);
 
     if (todosToToggle.length === 0) {
-      setIdToLoad(todos.map(todo => todo.id));
+      setProcessingIds(todos.map(todo => todo.id));
       todosToToggle = [...todos];
     } else {
-      setIdToLoad(todosToToggle.map(todo => todo.id));
+      setProcessingIds(todosToToggle.map(todo => todo.id));
     }
 
     try {
@@ -140,23 +141,23 @@ export const App: React.FC = () => {
               }),
             );
           } catch {
-            setError('Unable to update a todo');
+            setError(TodoError.UpdateError);
           }
         }),
       );
     } finally {
-      setIdToLoad([]);
+      setProcessingIds([]);
     }
   };
 
-  const TodoTitleSubmit = async (todo: Todo) => {
+  const handleSubmit = async (todo: Todo) => {
     const normalizedTitle = newTitle.trim();
 
     if (todo.title === normalizedTitle) {
       return;
     }
 
-    setIdToLoad(prev => [...prev, todo.id]);
+    setProcessingIds(prev => [...prev, todo.id]);
 
     try {
       const editedTodo = await updateTodo(todo.id, {
@@ -169,11 +170,11 @@ export const App: React.FC = () => {
         ),
       );
     } catch {
-      setError('Unable to update a todo');
+      setError(TodoError.UpdateError);
 
       return;
     } finally {
-      setIdToLoad([]);
+      setProcessingIds([]);
     }
 
     setEditingTodo(null);
@@ -197,7 +198,7 @@ export const App: React.FC = () => {
 
   const loadTodos = async () => {
     inputRef.current?.focus();
-    setError('');
+    setError(null);
     setIsLoading(true);
 
     try {
@@ -205,31 +206,15 @@ export const App: React.FC = () => {
 
       setTodos(fetchedTodos);
     } catch {
-      setError('Unable to load todos');
+      setError(TodoError.LoadError);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const ErrorNotificationClear = () => {
-    let timeoutId: number;
-
-    if (error?.length) {
-      timeoutId = window.setTimeout(() => setError(null), 3000);
-    }
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  };
-
   useEffect(() => {
     loadTodos();
   }, []);
-
-  useEffect(() => {
-    return ErrorNotificationClear();
-  }, [error]);
 
   if (!USER_ID) {
     return <UserWarning />;
@@ -252,12 +237,12 @@ export const App: React.FC = () => {
         <TodoList
           todos={filteredTodos}
           onDelete={handleDeleteTodo}
-          IdToLoad={IdToLoad}
+          processingIds={processingIds}
           onToggle={handleToggleTodo}
           editingTodo={editingTodo}
           setEditingTodo={setEditingTodo}
           newTitle={newTitle}
-          onTitleSubmit={TodoTitleSubmit}
+          onTitleSubmit={handleSubmit}
           setError={setError}
           setNewTitle={setNewTitle}
         />
@@ -266,11 +251,11 @@ export const App: React.FC = () => {
             todo={tempoTodo}
             isTodoTemp={true}
             onDelete={handleDeleteTodo}
-            IdToLoad={IdToLoad}
+            processingIds={processingIds}
             onToggle={handleToggleTodo}
             editingTodo={editingTodo}
             setEditingTodo={setEditingTodo}
-            onTitleSubmit={TodoTitleSubmit}
+            onTitleSubmit={handleSubmit}
             setError={setError}
             newTitle={newTitle}
             setNewTitle={setNewTitle}
@@ -285,7 +270,7 @@ export const App: React.FC = () => {
           />
         )}
       </div>
-      <ErrorNotification error={error} />
+      <ErrorNotification error={error} setError={setError} />
     </div>
   );
 };

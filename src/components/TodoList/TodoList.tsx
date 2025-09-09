@@ -1,16 +1,17 @@
 import React from 'react';
 import { Todo } from '../../types/Todo';
 import { TodoItem } from '../TodoItem/TodoItem';
+import { TodoError } from '../../types/TodoError';
 
 type Props = {
   todos: Todo[];
   onDelete: (id: number) => void;
-  IdToLoad: number[];
+  processingIds: number[];
   onToggle: (todo: Todo) => void;
   editingTodo: Todo | null;
   setEditingTodo: (todo: Todo | null) => void;
   onTitleSubmit: (todo: Todo) => void;
-  setError: (error: string) => void;
+  setError: (error: TodoError) => void;
   newTitle: string;
   setNewTitle: (title: string) => void;
 };
@@ -18,7 +19,7 @@ type Props = {
 export const TodoList: React.FC<Props> = ({
   todos,
   onDelete,
-  IdToLoad,
+  processingIds,
   onToggle,
   editingTodo,
   setEditingTodo,
@@ -35,7 +36,7 @@ export const TodoList: React.FC<Props> = ({
             todo={todo}
             key={todo.id}
             onDelete={onDelete}
-            IdToLoad={IdToLoad}
+            processingIds={processingIds}
             onToggle={onToggle}
             editingTodo={editingTodo}
             setEditingTodo={setEditingTodo}

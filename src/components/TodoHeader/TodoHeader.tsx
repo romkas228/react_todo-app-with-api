@@ -1,12 +1,13 @@
 import classNames from 'classnames';
 import { Todo } from '../../types/Todo';
 import { useState } from 'react';
+import { TodoError } from '../../types/TodoError';
 
 type Props = {
   todos: Todo[];
   isLoading: boolean;
   inputRef: { current: null | HTMLInputElement };
-  setError: (error: string) => void;
+  setError: (error: TodoError) => void;
   onAdd: (title: string) => Promise<boolean>;
   error: string | null;
   onToggleAll: () => void;
@@ -22,11 +23,11 @@ export const TodoHeader: React.FC<Props> = ({
 }) => {
   const [newTitle, setNewTitle] = useState('');
 
-  const SubmitHandler = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submitHandler = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!newTitle.trim().length) {
-      setError('Title should not be empty');
+      setError(TodoError.TitleIsNotEmpty);
 
       return;
     }
@@ -57,7 +58,7 @@ export const TodoHeader: React.FC<Props> = ({
       )}
 
       {/* Add a todo on form submit */}
-      <form onSubmit={SubmitHandler}>
+      <form onSubmit={submitHandler}>
         <input
           ref={inputRef}
           data-cy="NewTodoField"

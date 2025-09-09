@@ -2,17 +2,18 @@
 import classNames from 'classnames';
 import { Todo } from '../../types/Todo';
 import { useRef } from 'react';
+import { TodoError } from '../../types/TodoError';
 
 type Props = {
   todo: Todo;
   isTodoTemp?: boolean;
   onDelete: (id: number) => void;
-  IdToLoad: number[];
+  processingIds: number[];
   onToggle: (todo: Todo) => void;
   editingTodo: Todo | null;
   setEditingTodo: (todo: Todo | null) => void;
   onTitleSubmit: (todo: Todo) => void;
-  setError: (error: string) => void;
+  setError: (error: TodoError) => void;
   newTitle: string;
   setNewTitle: (title: string) => void;
 };
@@ -21,7 +22,7 @@ export const TodoItem: React.FC<Props> = ({
   todo,
   isTodoTemp,
   onDelete,
-  IdToLoad,
+  processingIds,
   onToggle,
   editingTodo,
   setEditingTodo,
@@ -30,6 +31,8 @@ export const TodoItem: React.FC<Props> = ({
   onTitleSubmit,
 }) => {
   const titleFieldRef = useRef<HTMLInputElement>(null);
+
+  const shouldShowDeleteButton = !isTodoTemp && editingTodo?.id !== todo.id;
 
   const handleEditTodoTitle = () => {
     setEditingTodo(todo);
@@ -123,7 +126,7 @@ export const TodoItem: React.FC<Props> = ({
           {todo.title}
         </span>
       )}
-      {!isTodoTemp && editingTodo?.id !== todo.id && (
+      {shouldShowDeleteButton && (
         <button
           type="button"
           className="todo__remove"
@@ -138,7 +141,7 @@ export const TodoItem: React.FC<Props> = ({
       <div
         data-cy="TodoLoader"
         className={classNames('modal', 'overlay', {
-          'is-active': isTodoTemp || IdToLoad.includes(todo.id),
+          'is-active': isTodoTemp || processingIds.includes(todo.id),
         })}
       >
         <div className="modal-background has-background-white-ter" />
